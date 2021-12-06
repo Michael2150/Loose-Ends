@@ -20,14 +20,14 @@ Bob brings the car to a stop at a red light one block from the precinct. He look
 *Open the file
     Bob reaches over for the file and flicks it open 
     Bob: “hmm...”
-    inside was all the details on the case, "found dead in the wheatfield near his father’s mill", "his father had reported that 3 of his friends were over at his house that night"
+    inside was all the details on the case, "Teen Rhys Miller found dead in the wheatfield near his father’s mill", "his father had reported that 2 of his friends were over at his house that night"
     -> 1a_rambling_and_accident
 *[Leave it alone]
     Bob leaves the file and starts talking to himself.
     -> 1a_rambling_and_accident
     
 === 1a_rambling_and_accident ===
-Bob: “Its always the kids who seem to have their whole life ahead of em that lose it all so quickly, now I have to go question these 5 twenty something year olds and that’s going to go great. They don’t talk to anyone but each other from experience”
+Bob: “Its always the kids who seem to have their whole life ahead of em that lose it all so quickly, now I have to go question these 2 twenty something year olds and that’s going to go great. They don’t talk to anyone but each other from experience”
 He rambles on to himself. It was a new terrible habit he had picked up, but he found speaking to himself helped him remember it more.
 -> 2_crash_and_out_of_body_experience
     
@@ -48,6 +48,9 @@ Bob: “Wh.. What’s happening?”
 Bob’s spirit feels a pull back towards his body as he is getting revived.
 Bob: “I have to get to the precinct as soon as possible. Those suspects are getting released tonight.”
 Bob figures out how to move in his new ghostly state and makes his way to the precinct down the street.
+
+#IMAGE: game_resources/police_station.png
+
 -> 3a_front_of_precinct
 
 
@@ -116,15 +119,6 @@ Bob is now possessing a rat!
 - 2: 	-> 3d_back_of_precint
 - else: -> 3a_front_of_precinct
 }
-
-->credits
-
-
-
-
-
-
-
 
 
 
