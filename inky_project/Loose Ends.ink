@@ -75,7 +75,7 @@ Bob’s at the left side of the precinct there’s a closed window where he can 
 + Try the window
     {is_possessing_a_rat:
      Bob can not open the window while possessing the rat.
-  - else:
+    - else:
         Bob tries to open the window, but fails. He has no effect on the physical world. 
     {"Bob: “I’ve got to find another way in..."” | Bob: “Can’t go in here, there must be another way...” | Bob: “I’ve tried that already I can’t get in, I have to try another way..."}
     }
