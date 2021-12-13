@@ -1,7 +1,23 @@
-VAR debug = false //Shows the variable values on the top of the story.
+VAR debug = true //Shows the variable values on the top of the story.
 VAR is_possessing_a_rat = false //Stores whether you are possessing the rat.
+VAR is_possessing_the_secretary = false //Stores whether you are possessing the secretary.
+VAR has_learned_to_unpossess_rat = true //This indicates that the player has learned the ability to unpossess things.
 VAR where_does_rat_spawn = -1 //Indicates the place where the rat spawns.
+VAR rat_body_position = -1 //Indicates where the rat's body is left when the player depossesses it.
+VAR secretary_position = -1 
 VAR can_interact_with_rat = false //Indicates whether you can interact with the rat at a certain stage.
+VAR player_position = -1 //Indicates the player's current position in the map.
+VAR	OUTSIDE_FRONT = 1
+VAR	OUTSIDE_LEFT= 2
+VAR	OUTSIDE_BACK = 3
+VAR	OUTSIDE_RIGHT = 4
+VAR	INSIDE_BATHROOM = 5
+VAR	INSIDE_OFFICE = 6
+VAR	INSIDE_FRONT = 7
+VAR	INSIDE_CELLS = 8
+VAR	INSIDE_BACKOFFICE  = 9
+VAR	INSIDE_EVIDENCE_ROOM = 10
+
 ~ where_does_rat_spawn = RANDOM(1,2) //Gets a random place to spawn the rat.
 
 {debug:
@@ -59,74 +75,139 @@ Bob is standing in front of the precinct.
 + Try the door
     {is_possessing_a_rat:
      Bob can not open the door while possessing the rat.
-  - else:
+    - else:
     Bob tries to open the door, but fails. He has no effect on the physical world. 
     {"Bob: “I’ve got to find another way in...”" | "Bob: “Can’t go in here, there must be another way...”" | "Bob: “I’ve tried that already I can’t get in, I have to try another way..."}
     }
     -> 3a_front_of_precinct
-+ Go around the right of the precinct
-    -> 3c_right_of_precinct
-+ Go around the left of the precinct
-    -> 3b_left_of_precinct
++ Go around the right of the precinct -> 3c_right_of_precinct
++ Go around the left of the precinct -> 3b_left_of_precinct
 
 === 3b_left_of_precinct ===
 ~ can_interact_with_rat = where_does_rat_spawn == 1 && not is_possessing_a_rat
 Bob’s at the left side of the precinct there’s a closed window where he can see the secretary casually doing her work inside. She doesn't seem to notice him. {can_interact_with_rat : There appears to be a rat dying on the floor.}
 + Try the window
     {is_possessing_a_rat:
-     Bob can not open the window while possessing the rat.
+        Bob can not open the window while possessing the rat.
     - else:
         Bob tries to open the window, but fails. He has no effect on the physical world. 
     {"Bob: “I’ve got to find another way in..."” | Bob: “Can’t go in here, there must be another way...” | Bob: “I’ve tried that already I can’t get in, I have to try another way..."}
     }
     -> 3b_left_of_precinct
-+ Go to the back of the precinct
-    -> 3d_back_of_precint
-+ Go to the front of the precinct
-    -> 3a_front_of_precinct
++ Go to the back of the precinct -> 3d_back_of_precint
++ Go to the front of the precinct -> 3a_front_of_precinct
 + {can_interact_with_rat} Pick up dying rat
-    -> 3e_pick_up_dying_rat
+    <- 3e_pick_up_dying_rat
+    -> 3b_left_of_precinct
 
 === 3c_right_of_precinct ===
 Bob’s at the right side of the precinct. There is nothing except a big wall with a small crack that seems to lead into the wall.
-+ Go to the back of the precinct
-    -> 3d_back_of_precint
-+ Go to the front of the precinct
-    -> 3a_front_of_precinct
++ Go to the back of the precinct -> 3d_back_of_precint
++ Go to the front of the precinct -> 3a_front_of_precinct
 + {is_possessing_a_rat} Go through crack.
     Bob has entered the precinct.
-    -> credits
+    -> 4a_bathroom
 
 === 3d_back_of_precint ===
 ~ can_interact_with_rat = where_does_rat_spawn == 2 && not is_possessing_a_rat
 Bob's at the back of the precinct. There's some trash but no way to enter the precinct. {can_interact_with_rat: There appears to be a rat dying on the floor.}
-+ Go around the right of the precinct
-    -> 3c_right_of_precinct
-+ Go around the left of the precinct
-    -> 3b_left_of_precinct
++ Go around the right of the precinct -> 3c_right_of_precinct
++ Go around the left of the precinct -> 3b_left_of_precinct
 + {can_interact_with_rat} Pick up dying rat
-    -> 3e_pick_up_dying_rat
-
+    <- 3e_pick_up_dying_rat
+    -> 3d_back_of_precint
+    
 
 === 3e_pick_up_dying_rat ===
 Bob picks up the rat and feels his own life force enter into it. He feels sick and can almost hear the rat's thoughts. He becomes one with the rat. 
-Bob: "What the fuck!"
-Rat: "SQEEECK!"
-Bob is now possessing a rat!
-~ is_possessing_a_rat = true
-{ where_does_rat_spawn:
-- 1: 	-> 3b_left_of_precinct
-- 2: 	-> 3d_back_of_precint
-- else: -> 3a_front_of_precinct
-}
+    Bob: "What the fuck!"
+    Rat: "SQEEECK!"
+<- possess_rat(true)
+-> DONE
 
 
+=== 4a_bathroom ===
+~ player_position = INSIDE_BATHROOM
++ Go to Office -> 4b_office
++ Go back through crack -> 3c_right_of_precinct
++ {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
+    <- possess_rat(false)
+    -> 4a_bathroom
++ {rat_body_position == player_position && not is_possessing_a_rat} Possess rat 
+    <- possess_rat(true)
+    -> 4a_bathroom
+
+=== 4b_office ===
+~ player_position = INSIDE_OFFICE
++ Go to backoffice -> 4c_backoffice
++ Go to front -> 4d_front
++ Go to bathroom -> 4a_bathroom 
++ {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
+    <- possess_rat(false)
+    -> 4b_office
++ {rat_body_position == player_position && not is_possessing_a_rat} Possess rat 
+    <- possess_rat(true)
+    -> 4b_office
+
+=== 4c_backoffice ===
+~ player_position = INSIDE_BACKOFFICE
++ Go to cells -> 4e_cells
++ Go to front -> 4d_front
++ Go to office -> 4b_office
++ {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
+    <- possess_rat(false)
+    -> 4c_backoffice
++ {rat_body_position == player_position && not is_possessing_a_rat} Possess rat 
+    <- possess_rat(true)
+    -> 4c_backoffice
+
+=== 4d_front ===
+~ player_position = INSIDE_FRONT
++ Go to backoffice -> 4c_backoffice
++ Go to office -> 4b_office
++ Go to evidence room -> 4e_evidence_room
++ {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
+    <- possess_rat(false)
+    -> 4d_front
++ {rat_body_position == player_position && not is_possessing_a_rat} Possess rat 
+    <- possess_rat(true)
+    -> 4d_front
+
+=== 4e_evidence_room ===
+~ player_position = INSIDE_EVIDENCE_ROOM
++ Go to front -> 4d_front
++ {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
+    <- possess_rat(false)
+    -> 4e_evidence_room
++ {rat_body_position == player_position && not is_possessing_a_rat} Possess rat 
+    <- possess_rat(true)
+    -> 4e_evidence_room
+
+=== 4e_cells ===
+~ player_position = INSIDE_CELLS
++ Go to backoffice -> 4c_backoffice
++ {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
+    <- possess_rat(false)
+    -> 4e_cells
++ {rat_body_position == player_position && not is_possessing_a_rat} Possess rat 
+    <- possess_rat(true)
+    -> 4e_cells
 
 
-
+=== possess_rat(isPossessing) ===
+    {isPossessing: 
+        Bob is now possessing a rat!
+    -else:
+        Bob has unpossessed the rat!
+    }
+    {not isPossessing: 
+        ~rat_body_position = player_position
+    }
+    ~ is_possessing_a_rat = isPossessing
+    -> DONE
+    
 
 === credits ===
-    That's the end of the demo. Stick around for the final version where you can solve the case yourself.
     Programming: Michael Gerber
     Story: Sean Mackey
     Design: Dominika Kmiecik
