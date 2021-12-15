@@ -1,27 +1,34 @@
+//Area constant values
+CONST OUTSIDE_FRONT = 1
+CONST OUTSIDE_LEFT= 2
+CONST OUTSIDE_BACK = 3
+CONST OUTSIDE_RIGHT = 4
+CONST INSIDE_BATHROOM = 5
+CONST INSIDE_OFFICE = 6
+CONST INSIDE_FRONT = 7
+CONST INSIDE_CELLS = 8
+CONST INSIDE_BACKOFFICE  = 9
+CONST INSIDE_EVIDENCE_ROOM = 10
+
 VAR debug = true //Shows the variable values on the top of the story.
 VAR is_possessing_a_rat = false //Stores whether you are possessing the rat.
 VAR is_possessing_the_secretary = false //Stores whether you are possessing the secretary.
 VAR has_learned_to_unpossess_rat = true //This indicates that the player has learned the ability to unpossess things.
 VAR where_does_rat_spawn = -1 //Indicates the place where the rat spawns.
 VAR rat_body_position = -1 //Indicates where the rat's body is left when the player depossesses it.
-VAR secretary_position = -1 
+VAR secretary_position = -1 //Indicates the position of the secretary in the precinct.
 VAR can_interact_with_rat = false //Indicates whether you can interact with the rat at a certain stage.
+VAR player_prev_position = -1 //Indicates what the player's previous position was.
 VAR player_position = -1 //Indicates the player's current position in the map.
-VAR	OUTSIDE_FRONT = 1
-VAR	OUTSIDE_LEFT= 2
-VAR	OUTSIDE_BACK = 3
-VAR	OUTSIDE_RIGHT = 4
-VAR	INSIDE_BATHROOM = 5
-VAR	INSIDE_OFFICE = 6
-VAR	INSIDE_FRONT = 7
-VAR	INSIDE_CELLS = 8
-VAR	INSIDE_BACKOFFICE  = 9
-VAR	INSIDE_EVIDENCE_ROOM = 10
 
 ~ where_does_rat_spawn = RANDOM(1,2) //Gets a random place to spawn the rat.
+~ secretary_position = INSIDE_FRONT //Sets the secretary's position.
+~ player_position = OUTSIDE_FRONT //Sets the player's starting position.
 
 {debug:
-    where_does_rat_spawn = {where_does_rat_spawn}
+    [[[[[[[[[[[[[[[[[[[[ DEBUGGING ]]]]]]]]]]]]]]]]]]]]]]
+    ~is_possessing_a_rat = true
+    -> 4a_bathroom
 }
 
 -> main
@@ -71,6 +78,8 @@ Bob figures out how to move in his new ghostly state and makes his way to the pr
 
 
 === 3a_front_of_precinct ===
+~ player_prev_position = player_position
+~ player_position = OUTSIDE_FRONT
 Bob is standing in front of the precinct.
 + Try the door
     {is_possessing_a_rat:
@@ -84,6 +93,8 @@ Bob is standing in front of the precinct.
 + Go around the left of the precinct -> 3b_left_of_precinct
 
 === 3b_left_of_precinct ===
+~ player_prev_position = player_position
+~ player_position = OUTSIDE_LEFT
 ~ can_interact_with_rat = where_does_rat_spawn == 1 && not is_possessing_a_rat
 Bob’s at the left side of the precinct there’s a closed window where he can see the secretary casually doing her work inside. She doesn't seem to notice him. {can_interact_with_rat : There appears to be a rat dying on the floor.}
 + Try the window
@@ -101,14 +112,18 @@ Bob’s at the left side of the precinct there’s a closed window where he can 
     -> 3b_left_of_precinct
 
 === 3c_right_of_precinct ===
+~ player_prev_position = player_position
+~ player_position = OUTSIDE_RIGHT
 Bob’s at the right side of the precinct. There is nothing except a big wall with a small crack that seems to lead into the wall.
 + Go to the back of the precinct -> 3d_back_of_precint
 + Go to the front of the precinct -> 3a_front_of_precinct
 + {is_possessing_a_rat} Go through crack.
-    Bob has entered the precinct.
+    Bob, while possessing the rat's body, climbs through the crack.
     -> 4a_bathroom
 
 === 3d_back_of_precint ===
+~ player_prev_position = player_position
+~ player_position = OUTSIDE_BACK
 ~ can_interact_with_rat = where_does_rat_spawn == 2 && not is_possessing_a_rat
 Bob's at the back of the precinct. There's some trash but no way to enter the precinct. {can_interact_with_rat: There appears to be a rat dying on the floor.}
 + Go around the right of the precinct -> 3c_right_of_precinct
@@ -127,9 +142,13 @@ Bob picks up the rat and feels his own life force enter into it. He feels sick a
 
 
 === 4a_bathroom ===
+~ player_prev_position = player_position
 ~ player_position = INSIDE_BATHROOM
-+ Go to Office -> 4b_office
-+ Go back through crack -> 3c_right_of_precinct
+<- bob_enters_room
++ Go to Office 
+    -> 4b_office
++ {is_possessing_a_rat} Go back through crack 
+    -> 3c_right_of_precinct
 + {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
     <- possess_rat(false)
     -> 4a_bathroom
@@ -138,10 +157,15 @@ Bob picks up the rat and feels his own life force enter into it. He feels sick a
     -> 4a_bathroom
 
 === 4b_office ===
+~ player_prev_position = player_position
 ~ player_position = INSIDE_OFFICE
-+ Go to backoffice -> 4c_backoffice
-+ Go to front -> 4d_front
-+ Go to bathroom -> 4a_bathroom 
+<- bob_enters_room
++ Go to backoffice 
+    -> 4c_backoffice
++ Go to front 
+    -> 4d_front
++ Go to bathroom 
+    -> 4a_bathroom 
 + {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
     <- possess_rat(false)
     -> 4b_office
@@ -150,10 +174,15 @@ Bob picks up the rat and feels his own life force enter into it. He feels sick a
     -> 4b_office
 
 === 4c_backoffice ===
+~ player_prev_position = player_position
 ~ player_position = INSIDE_BACKOFFICE
-+ Go to cells -> 4e_cells
-+ Go to front -> 4d_front
-+ Go to office -> 4b_office
+<- bob_enters_room
++ Go to cells 
+    -> 4e_cells
++ Go to front 
+    -> 4d_front
++ Go to office 
+    -> 4b_office
 + {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
     <- possess_rat(false)
     -> 4c_backoffice
@@ -162,10 +191,15 @@ Bob picks up the rat and feels his own life force enter into it. He feels sick a
     -> 4c_backoffice
 
 === 4d_front ===
+~ player_prev_position = player_position
 ~ player_position = INSIDE_FRONT
-+ Go to backoffice -> 4c_backoffice
-+ Go to office -> 4b_office
-+ Go to evidence room -> 4e_evidence_room
+<- bob_enters_room
++ Go to backoffice 
+    -> 4c_backoffice
++ Go to office 
+    -> 4b_office
++ Go to evidence room 
+    -> 4e_evidence_room
 + {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
     <- possess_rat(false)
     -> 4d_front
@@ -174,8 +208,11 @@ Bob picks up the rat and feels his own life force enter into it. He feels sick a
     -> 4d_front
 
 === 4e_evidence_room ===
+~ player_prev_position = player_position
 ~ player_position = INSIDE_EVIDENCE_ROOM
-+ Go to front -> 4d_front
+<- bob_enters_room
++ Go to front 
+    -> 4d_front
 + {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
     <- possess_rat(false)
     -> 4e_evidence_room
@@ -184,8 +221,11 @@ Bob picks up the rat and feels his own life force enter into it. He feels sick a
     -> 4e_evidence_room
 
 === 4e_cells ===
+~ player_prev_position = player_position
 ~ player_position = INSIDE_CELLS
-+ Go to backoffice -> 4c_backoffice
+<- bob_enters_room
++ Go to backoffice 
+    -> 4c_backoffice
 + {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
     <- possess_rat(false)
     -> 4e_cells
@@ -205,10 +245,36 @@ Bob picks up the rat and feels his own life force enter into it. He feels sick a
     }
     ~ is_possessing_a_rat = isPossessing
     -> DONE
-    
+
+=== bob_enters_room ===
+Bob has entered the
+{player_position:
+ - INSIDE_BATHROOM: <> precinct bathrooms
+ - INSIDE_OFFICE: <> detective offices
+ - INSIDE_FRONT: <> precinct front
+ - INSIDE_BACKOFFICE: <> back office hallway
+ - INSIDE_CELLS: <> cells
+ - INSIDE_EVIDENCE_ROOM: <> evidence room
+ - else: room
+}
+{player_prev_position: 
+ - OUTSIDE_RIGHT: <> from outside the precinct.
+ - INSIDE_BATHROOM: <> from the precinct bathrooms.
+ - INSIDE_OFFICE: <> from the detective offices.
+ - INSIDE_FRONT: <> from the front.
+ - INSIDE_BACKOFFICE: <> from the back office hallway.
+ - INSIDE_CELLS: <> from the cells.
+ - INSIDE_EVIDENCE_ROOM: <> from the evidence room.
+ - else: <>.
+}
+->DONE
+
 
 === credits ===
     Programming: Michael Gerber
     Story: Sean Mackey
     Design: Dominika Kmiecik
+    Have a look at this game's Github page: https://github.com/Michael2150/Loose-Ends
+    
+    
     -> END
