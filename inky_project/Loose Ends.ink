@@ -1,4 +1,7 @@
-//Area constant values
+# theme: dark
+# author: Michael Gerber, Sean Mackey, Dominika Kmiecik
+
+//======================================= CONSTANT VALUES ==============================================
 CONST OUTSIDE_FRONT = 1
 CONST OUTSIDE_LEFT= 2
 CONST OUTSIDE_BACK = 3
@@ -10,26 +13,44 @@ CONST INSIDE_CELLS = 8
 CONST INSIDE_BACKOFFICE  = 9
 CONST INSIDE_EVIDENCE_ROOM = 10
 
-VAR debug = true //Shows the variable values on the top of the story.
+//======================================= VARIABLES ==============================================
+
+VAR debug = true //ENABLES DEBUGGING, THIS STARTS THE STORY WHERE I'M CURRENTLY WORKING ON IT INSTEAD OF THE BEGINNING.
 VAR is_possessing_a_rat = false //Stores whether you are possessing the rat.
 VAR is_possessing_the_secretary = false //Stores whether you are possessing the secretary.
-VAR has_learned_to_unpossess_rat = true //This indicates that the player has learned the ability to unpossess things.
+VAR has_learned_to_unpossess_rat = false //This indicates that the player has learned the ability to unpossess things.
 VAR where_does_rat_spawn = -1 //Indicates the place where the rat spawns.
 VAR rat_body_position = -1 //Indicates where the rat's body is left when the player depossesses it.
 VAR secretary_position = -1 //Indicates the position of the secretary in the precinct.
 VAR can_interact_with_rat = false //Indicates whether you can interact with the rat at a certain stage.
+VAR has_key = false //Stores wether you have the key for the evidence room.
 VAR player_prev_position = -1 //Indicates what the player's previous position was.
 VAR player_position = -1 //Indicates the player's current position in the map.
+VAR files_left_to_read = 2 //Shows that Bob can read a certain amount of files before he gets too tired.
+VAR questions_left = 3 //The amount of questions Bob has energy left for.
 
+//Initialize some variables
 ~ where_does_rat_spawn = RANDOM(1,2) //Gets a random place to spawn the rat.
 ~ secretary_position = INSIDE_FRONT //Sets the secretary's position.
-~ player_position = OUTSIDE_FRONT //Sets the player's starting position.
+~ player_position = OUTSIDE_FRONT  //Sets the player's starting position.
 
 {debug:
     [[[[[[[[[[[[[[[[[[[[ DEBUGGING ]]]]]]]]]]]]]]]]]]]]]]
-    ~is_possessing_a_rat = true
-    -> 4a_bathroom
+    ~has_learned_to_unpossess_rat = true
+    <- possess_secretary(true)
+    ~player_position = INSIDE_OFFICE
+    <- 4h_look_for_key(4h_look_for_key)
+    <- possess_secretary(false)
+    <- possess_rat(true)
+    <- 4i_pull_key_out
+    <- possess_rat(false)
+    <- possess_secretary(true)
+    ~has_key = true
+    ~player_position = INSIDE_FRONT
+    -> 4d_front
 }
+
+//======================================= INTRODUCTION ==============================================
 
 -> main
 === main ===
@@ -40,16 +61,21 @@ The sound of the rain patters against the windscreen. The drops stuck to the dri
 Bob: “Another miserable night, guess it’s never going to be a nice one when it comes to cases like these.”
 Bob brings the car to a stop at a red light one block from the precinct. He looks around not seeing another car anywhere, though with the tall reaching buildings of the city he wasn’t able to see much. He looks down to his right at the passenger side seat at the case file resting there, attached to the front was the grainy black and white photo of a smiling young man. Valentine sighs quietly as he rubs the back of his head.
 
+Choose one of the options below.
+
 *Open the file
+    ->1a_open_case_file
+*[Leave it alone]
+    Bob leaves the file and starts talking to himself.
+    -> 1b_rambling_and_accident
+
+=== 1a_open_case_file ===
     Bob reaches over for the file and flicks it open 
     Bob: “hmm...”
     inside was all the details on the case, "Teen Rhys Miller found dead in the wheatfield near his father’s mill", "his father had reported that 2 of his friends were over at his house that night"
-    -> 1a_rambling_and_accident
-*[Leave it alone]
-    Bob leaves the file and starts talking to himself.
-    -> 1a_rambling_and_accident
-    
-=== 1a_rambling_and_accident ===
+    -> 1b_rambling_and_accident
+
+=== 1b_rambling_and_accident ===
 Bob: “Its always the kids who seem to have their whole life ahead of em that lose it all so quickly, now I have to go question these 2 twenty something year olds and that’s going to go great. They don’t talk to anyone but each other from experience”
 He rambles on to himself. It was a new terrible habit he had picked up, but he found speaking to himself helped him remember it more.
 -> 2_crash_and_out_of_body_experience
@@ -76,6 +102,7 @@ Bob figures out how to move in his new ghostly state and makes his way to the pr
 
 -> 3a_front_of_precinct
 
+//======================================= OUTSIDE ==============================================
 
 === 3a_front_of_precinct ===
 ~ player_prev_position = player_position
@@ -86,7 +113,7 @@ Bob is standing in front of the precinct.
      Bob can not open the door while possessing the rat.
     - else:
     Bob tries to open the door, but fails. He has no effect on the physical world. 
-    {"Bob: “I’ve got to find another way in...”" | "Bob: “Can’t go in here, there must be another way...”" | "Bob: “I’ve tried that already I can’t get in, I have to try another way..."}
+    Bob: "{I’ve got to find another way in... |Can’t go in here, there must be another way... |I’ve tried that already I can’t get in, I have to try another way...}"
     }
     -> 3a_front_of_precinct
 + Go around the right of the precinct -> 3c_right_of_precinct
@@ -102,7 +129,7 @@ Bob’s at the left side of the precinct there’s a closed window where he can 
         Bob can not open the window while possessing the rat.
     - else:
         Bob tries to open the window, but fails. He has no effect on the physical world. 
-    {"Bob: “I’ve got to find another way in..."” | Bob: “Can’t go in here, there must be another way...” | Bob: “I’ve tried that already I can’t get in, I have to try another way..."}
+    Bob: "{I’ve got to find another way in... |Can’t go in here, there must be another way... |I’ve tried that already I can’t get in, I have to try another way...}"
     }
     -> 3b_left_of_precinct
 + Go to the back of the precinct -> 3d_back_of_precint
@@ -140,103 +167,342 @@ Bob picks up the rat and feels his own life force enter into it. He feels sick a
 <- possess_rat(true)
 -> DONE
 
+//======================================= INSIDE ==============================================
 
 === 4a_bathroom ===
 ~ player_prev_position = player_position
 ~ player_position = INSIDE_BATHROOM
-<- bob_enters_room
-+ Go to Office 
+{player_prev_position != player_position: 
+    <- bob_enters_room
+}
++ [Go to the detectives office.]
     -> 4b_office
 + {is_possessing_a_rat} Go back through crack 
     -> 3c_right_of_precinct
-+ {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
++ {is_possessing_a_rat && has_learned_to_unpossess_rat} [Unpossess the rat.]
     <- possess_rat(false)
     -> 4a_bathroom
-+ {rat_body_position == player_position && not is_possessing_a_rat} Possess rat 
++ {rat_body_position == player_position && not is_possessing_a_rat && not is_possessing_the_secretary} [Possess rat.] 
     <- possess_rat(true)
+    -> 4a_bathroom
++ {is_possessing_the_secretary && has_learned_to_unpossess_rat} [Unpossess the secretary.]
+    <- possess_secretary(false)
+    -> 4a_bathroom
++ {secretary_position == player_position && not is_possessing_a_rat && not is_possessing_the_secretary} [Possess secretary.] 
+    <- possess_secretary(true)
     -> 4a_bathroom
 
 === 4b_office ===
 ~ player_prev_position = player_position
 ~ player_position = INSIDE_OFFICE
-<- bob_enters_room
-+ Go to backoffice 
+{player_prev_position != player_position: 
+    <- bob_enters_room
+    The {not (secretary_position == player_position): empty} office is filled with a few desks where the detectives do their work during the day. There's a door for the back office hallway that leads to the cells. There's a door that leads to the front of the precinct.
+    {not has_key && not is_possessing_a_rat: There might be something in here for us to find.}
+}
++ [Go to the back office hallway.]
     -> 4c_backoffice
-+ Go to front 
++ [Go to the precinct front.] 
     -> 4d_front
-+ Go to bathroom 
++ [Go to the bathroom.]
     -> 4a_bathroom 
-+ {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
++ {not has_key && not is_possessing_a_rat && not 4i_pull_key_out} [Look for key]
+    <- 4h_look_for_key(4h_look_for_key)
+    -> 4b_office
++ {is_possessing_a_rat && 4h_look_for_key && not 4i_pull_key_out} [Pull out key]
+    <- 4i_pull_key_out
+    -> 4b_office
++ {4i_pull_key_out && not has_key} [Pick up key] 
+    {is_possessing_a_rat: 
+        Bob can not pick up the key while posessing the rat.
+        {has_learned_to_unpossess_rat: Bob: "Maybe I should try possess something a little.. bigger"}
+    -else:
+        {is_possessing_the_secretary:
+            Bob, possessing the secretary, picks up the key and puts it in her pocket.
+            ~has_key = true
+            Bob: "What's happening to me..."
+            He feels a pull back to his body. 
+        -else:
+            Bob can pick up the key. He has no affect on the physical world.
+            Bob: "Maybe I should try possess something."
+        }
+    }
+    -> 4b_office
++ {is_possessing_a_rat && has_learned_to_unpossess_rat} [Unpossess the rat.]
     <- possess_rat(false)
     -> 4b_office
-+ {rat_body_position == player_position && not is_possessing_a_rat} Possess rat 
++ {rat_body_position == player_position && not is_possessing_a_rat && not is_possessing_the_secretary} [Possess rat.] 
     <- possess_rat(true)
+    -> 4b_office
++ {is_possessing_the_secretary && has_learned_to_unpossess_rat} [Unpossess the secretary.]
+    <- possess_secretary(false)
+    -> 4b_office
++ {secretary_position == player_position && not is_possessing_a_rat && not is_possessing_the_secretary} [Possess secretary.] 
+    <- possess_secretary(true)
     -> 4b_office
 
 === 4c_backoffice ===
 ~ player_prev_position = player_position
 ~ player_position = INSIDE_BACKOFFICE
-<- bob_enters_room
-+ Go to cells 
+{player_prev_position != player_position: 
+    <- bob_enters_room
+    The back office hallway is dark and narrow
+    {player_prev_position == INSIDE_CELLS:
+        <>, it leads to the detectives office
+        <>. There's a door leading to the precinct front.
+    -else:
+        {player_prev_position == INSIDE_OFFICE:
+            <>, it leads to the cells
+            <>. There's a door leading to the precinct front.
+        -else:
+            <>, it leads to the detectives office, and the cells.
+        }
+    }
+}
++ [Go to the cells.]
     -> 4e_cells
-+ Go to front 
++ [Go to the precinct front.]
     -> 4d_front
-+ Go to office 
++ [Go to the detectives office.]
     -> 4b_office
-+ {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
++ {is_possessing_a_rat && has_learned_to_unpossess_rat} [Unpossess the rat.]
     <- possess_rat(false)
     -> 4c_backoffice
-+ {rat_body_position == player_position && not is_possessing_a_rat} Possess rat 
++ {rat_body_position == player_position && not is_possessing_a_rat && not is_possessing_the_secretary} [Possess rat.] 
     <- possess_rat(true)
+    -> 4c_backoffice
++ {is_possessing_the_secretary && has_learned_to_unpossess_rat} [Unpossess the secretary.]
+    <- possess_secretary(false)
+    -> 4c_backoffice
++ {secretary_position == player_position && not is_possessing_a_rat && not is_possessing_the_secretary} [Possess secretary.] 
+    <- possess_secretary(true)
     -> 4c_backoffice
 
 === 4d_front ===
 ~ player_prev_position = player_position
 ~ player_position = INSIDE_FRONT
-<- bob_enters_room
-+ Go to backoffice 
+{player_prev_position != player_position:
+    <- bob_enters_room
+    There's a desk in the middle of the small room. The secretary does her work there. This is where people enter the precinct. There's a small door to the evidence room.
+}
++ [Go to the back office hallway.]
     -> 4c_backoffice
-+ Go to office 
++ [Go to the detectives office.]
     -> 4b_office
-+ Go to evidence room 
++ {not 4f_open_evidence_room && not (has_key && is_possessing_the_secretary)}[Open evidence room door.]
+    {is_possessing_a_rat: 
+        Bob can not open the door while posessing the rat.
+        {has_learned_to_unpossess_rat: Bob: "Maybe I should try possess something a little.. bigger"}
+    -else:
+        {is_possessing_the_secretary:
+            <- 4g_try_open_evidence_room
+        -else:
+            Bob can not open the door. He has no affect on the physical world.
+            Bob: "Maybe I should try possess something."
+        }
+    }
+    -> 4d_front
++ {not 4f_open_evidence_room && (has_key && is_possessing_the_secretary)}[Unlock and open evidence room door.]
+    <- 4f_open_evidence_room
+    -> 4d_front
++ {4f_open_evidence_room}[Go to evidence room.]
     -> 4e_evidence_room
-+ {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
++ {is_possessing_a_rat && has_learned_to_unpossess_rat} [Unpossess the rat.]
     <- possess_rat(false)
     -> 4d_front
-+ {rat_body_position == player_position && not is_possessing_a_rat} Possess rat 
++ {rat_body_position == player_position && not is_possessing_a_rat && not is_possessing_the_secretary} [Possess rat.] 
     <- possess_rat(true)
+    -> 4d_front
++ {is_possessing_the_secretary && has_learned_to_unpossess_rat} [Unpossess the secretary.]
+    <- possess_secretary(false)
+    -> 4d_front
++ {secretary_position == player_position && not is_possessing_a_rat && not is_possessing_the_secretary} [Possess secretary.] 
+    <- possess_secretary(true)
     -> 4d_front
 
 === 4e_evidence_room ===
 ~ player_prev_position = player_position
 ~ player_position = INSIDE_EVIDENCE_ROOM
-<- bob_enters_room
-+ Go to front 
+{player_prev_position != player_position:
+    <- bob_enters_room
+    This small dark room has a few file cabinets with the evidence on current cases.
+}
+{not 4j_go_through_evidence: -> 4j_go_through_evidence(4j_go_through_evidence)} 
++ [Go to the precinct front.]
     -> 4d_front
-+ {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
++ {is_possessing_a_rat && has_learned_to_unpossess_rat} [Unpossess the rat.]
     <- possess_rat(false)
     -> 4e_evidence_room
-+ {rat_body_position == player_position && not is_possessing_a_rat} Possess rat 
++ {rat_body_position == player_position && not is_possessing_a_rat && not is_possessing_the_secretary} [Possess rat.] 
     <- possess_rat(true)
+    -> 4e_evidence_room
++ {is_possessing_the_secretary && has_learned_to_unpossess_rat} [Unpossess the secretary.]
+    <- possess_secretary(false)
+    -> 4e_evidence_room
++ {secretary_position == player_position && not is_possessing_a_rat && not is_possessing_the_secretary} [Possess secretary.] 
+    <- possess_secretary(true)
     -> 4e_evidence_room
 
 === 4e_cells ===
 ~ player_prev_position = player_position
 ~ player_position = INSIDE_CELLS
-<- bob_enters_room
-+ Go to backoffice 
+{player_prev_position != player_position:
+    <- bob_enters_room
+    The 2 cells are right next to each other. Inside of them is the 2 suspects of the murder of our victim{1a_open_case_file or read_about_the_father: Rhys Miller}. {not has_learned_to_unpossess_rat: There seems to be a small crack that leads into the evidence room.}
+}
++ [Go to the back office hallway.]
     -> 4c_backoffice
-+ {is_possessing_a_rat && has_learned_to_unpossess_rat} Unpossess the rat 
++ {not has_learned_to_unpossess_rat} [Try and fit through the small crack.]
+    Bob tries to fit his rat body through the small crack, but it does not work. Bob tries again, but harder. He squeezes so hard he feels his spirit escape from the rat's body.
+    ~has_learned_to_unpossess_rat = true
     <- possess_rat(false)
     -> 4e_cells
-+ {rat_body_position == player_position && not is_possessing_a_rat} Possess rat 
++ {is_possessing_a_rat && has_learned_to_unpossess_rat} [Unpossess the rat.]
+    <- possess_rat(false)
+    -> 4e_cells
++ {rat_body_position == player_position && not is_possessing_a_rat && not is_possessing_the_secretary} [Possess rat.] 
     <- possess_rat(true)
     -> 4e_cells
++ {is_possessing_the_secretary && has_learned_to_unpossess_rat} [Unpossess the secretary.]
+    <- possess_secretary(false)
+    -> 4e_cells
++ {secretary_position == player_position && not is_possessing_a_rat && not is_possessing_the_secretary} [Possess secretary.] 
+    <- possess_secretary(true)
+    -> 4e_cells
 
+=== 4f_open_evidence_room === //THIS ALSO STORES THAT WE'VE TRIED THIS AND THE DOOR IS OPEN
+Bob, using the secretary's body, uses the key to unlock and open the evidence room door.
+-> DONE
+
+=== 4g_try_open_evidence_room === //THIS ALSO STORES THAT WE'VE TRIED THIS
+Bob tries to open the door but it seems locked.
+Bob: "{~There should be a key somewhere in the office." |Maybe there's a key in the office." |There could be something in the office I can use to get in here."}
+->DONE
+
+
+=== 4h_look_for_key(lookedAlready) ===
+{lookedAlready:
+    {is_possessing_the_secretary:
+        Bob: "I just can't reach it back there. I need something smaller."
+    -else: 
+        Bob: "I just can't reach it back there. Maybe I should try possessing something."
+    }
+-else:
+    Bob{is_possessing_the_secretary:, possessing the secretary,} looks around the office for the key. Bob checks under the desk and notices something shiny far in the back. 
+    {is_possessing_the_secretary:
+        <> He tries to reach it but it's too far and narrow for the secretary's arm to reach. 
+        Bob: "I just can't reach it. I need something smaller."
+    -else: 
+        <> He tries to get it, but he can't seem to interact with it in his ghostly state.
+        Bob: "I just can't reach it. Maybe I should try possessing something."
+    }
+}
+->DONE
+
+=== 4i_pull_key_out ===
+Using his rat body, Bob squeezes behing the desk and pulls out the key onto the floor.
+-> DONE
+
+=== 4j_go_through_evidence(has_been_called) ===
+{not has_been_called: 
+    Bob feels another pull back to his body. He cannot keep doing this, the pull is getting stronger. There's 4 files to read, but because of this he can only read {files_left_to_read} of them.
+}
+{files_left_to_read > 1:
+    Bob: "Hmm I can only pick {files_left_to_read} files
+-else:
+    {files_left_to_read <= 0: //EXIT THIS "GO THROUGH EVIDENCE" LOOP
+        Bob: "I feel the pull getting stronger. I have enough energy to quickly interview the suspects before I get pulled back into my body."
+        -> 4k_interview_suspects(4k_interview_suspects)
+    -else:
+        Bob: "Hmm I can only pick {files_left_to_read} more file
+    }
+}
+<>, what is the most important"
+* [Read about the crime scene]
+    ~files_left_to_read--
+    <-read_about_the_crime_scene
+    -> 4j_go_through_evidence(4j_go_through_evidence)
+* [Read about Eric Miller, the victim's father]
+    ~files_left_to_read--
+    <-read_about_the_father
+    -> 4j_go_through_evidence(4j_go_through_evidence)
+* [Read about Richard Smith, the male suspect]
+    ~files_left_to_read--
+    <-read_about_richard
+    -> 4j_go_through_evidence(4j_go_through_evidence)
+* [Read about Tara Van Dyke, the female suspect]
+    ~files_left_to_read--
+    <-read_about_tara
+    -> 4j_go_through_evidence(4j_go_through_evidence)
+    
+=== 4k_interview_suspects(has_been_called) ===
+{not has_been_called: Bob walks the possessed secretary to the cells to question the 2 suspects.}
++ Question Tara Van Dyke
+    
+    **{read_about_tara} Question about herself.
+        Bob: "Tara, why don't you want to talk to us, we're here to help and figure out what happened to your frined Rhys."
+        Tara: ""
+        -> 4k_interview_suspects(4k_interview_suspects)
+    **{read_about_richard} Question about Richard.
+        -> 4k_interview_suspects(4k_interview_suspects)
+    **{read_about_the_father} Question about father.
+        -> 4k_interview_suspects(4k_interview_suspects)
+    **{read_about_the_crime_scene} Question about scene.
+        -> 4k_interview_suspects(4k_interview_suspects)
+    ++ Rather question someone else
+        -> 4k_interview_suspects(4k_interview_suspects)
++ Question Richard Smith
+    Bob: "Ok Richard. Let me ask you some questions."
+    **{read_about_tara} Question about herself.
+        Bob: "Tara, why don't you want to talk to us, we're here to help and figure out what happened to your frined Rhys"
+        -> 4k_interview_suspects(4k_interview_suspects)
+    **{read_about_richard} Question about Richard.
+        -> 4k_interview_suspects(4k_interview_suspects)
+    **{read_about_the_father} Question about father.
+        -> 4k_interview_suspects(4k_interview_suspects)
+    **{read_about_the_crime_scene} Question about scene.
+        -> 4k_interview_suspects(4k_interview_suspects)
+    ++ Rather question someone else
+        -> 4k_interview_suspects(4k_interview_suspects)
+
+//======================================= METHODS ==============================================
+
+=== read_about_the_crime_scene ===
+Bob reads the file.
+Crime Scene Investigation Report.
+The body was found on the ground next to the mill on the Miller's farm. There's a loose pipe where the victim fell off. Victim seemed to have climbed up on the mill for some reason and fallen off. Could've been an accident, but we suspect foul play since the pipe did not break it was loosened. The only loosened pipe on the whole mill.
+->DONE
+
+=== read_about_the_father ===
+Bob reads the file.
+Name: Eric Miller
+Gender: Male
+Family: He took over his family's mill and has been running it for almost 30 years now.
+Reason for arrest: [Not arrested] Not enough evidence 
+Notes: We could not arrest him as we did not have enough evidence. We do know he has a bad relationship with Richard's family and they've been wanting to buy the family mill from Eric a while now. 
+->DONE
+
+=== read_about_richard ===
+Bob reads the file.
+Name: Richard Smith
+Gender: Male
+Family: Richard comes from a rich family with a good reputation.
+Reason for arrest: Placed on the scene by father of victim.
+Notes: He seems to be very serious, implying it was not him and he would never let his family's reputation down like that. He's usually seen with friends that have the same financial status as him. 
+-> DONE
+
+=== read_about_tara ===
+Bob reads the file.
+Name: Tara Van Dyke
+Gender: Female
+Family: Dutch immigrants who found fortune in the gold rush.
+Reason for arrest: Placed on the scene by father of victim.
+Notes: She's very nervous and doesn't like to talk in front of people. She only has 2 best friends, the victim Rhys Miller, and the other suspect Richard Smith. She seems to feel comfortable and talks to Richard Smith.
+-> DONE
 
 === possess_rat(isPossessing) ===
     {isPossessing: 
-        Bob is now possessing a rat!
+        Bob is now possessing the rat!
     -else:
         Bob has unpossessed the rat!
     }
@@ -245,36 +511,65 @@ Bob picks up the rat and feels his own life force enter into it. He feels sick a
     }
     ~ is_possessing_a_rat = isPossessing
     -> DONE
+    
+=== possess_secretary(isPossessing) ===
+    {isPossessing: 
+        Bob is now possessing the secretary!
+    -else:
+        Bob has unpossessed the secretary!
+    }
+    {not isPossessing: 
+        ~secretary_position = player_position
+    }
+    ~ is_possessing_the_secretary = isPossessing
+    -> DONE
 
 === bob_enters_room ===
-Bob has entered the
-{player_position:
- - INSIDE_BATHROOM: <> precinct bathrooms
- - INSIDE_OFFICE: <> detective offices
- - INSIDE_FRONT: <> precinct front
- - INSIDE_BACKOFFICE: <> back office hallway
- - INSIDE_CELLS: <> cells
- - INSIDE_EVIDENCE_ROOM: <> evidence room
- - else: room
+{player_prev_position != player_position:
+    Bob has entered the
+    {player_position:
+     - INSIDE_BATHROOM: <> precinct bathrooms
+     - INSIDE_OFFICE: <> detective office
+     - INSIDE_FRONT: <> precinct front
+     - INSIDE_BACKOFFICE: <> back office hallway
+     - INSIDE_CELLS: <> cells
+     - INSIDE_EVIDENCE_ROOM: <> evidence room
+     - else: room
+    }
+    {player_prev_position: 
+     - OUTSIDE_RIGHT: <> from outside the precinct.
+     - INSIDE_BATHROOM: <> from the precinct bathrooms.
+     - INSIDE_OFFICE: <> from the detective offices.
+     - INSIDE_FRONT: <> from the precinct front.
+     - INSIDE_BACKOFFICE: <> from the back office hallway.
+     - INSIDE_CELLS: <> from the cells.
+     - INSIDE_EVIDENCE_ROOM: <> from the evidence room.
+     - else: <>.
+    }
+    
+    {rat_body_position == player_position && not is_possessing_a_rat: The rat's dying body is in this room}
+    {secretary_position == player_position && not is_possessing_the_secretary: The secretary is in this room}
 }
-{player_prev_position: 
- - OUTSIDE_RIGHT: <> from outside the precinct.
- - INSIDE_BATHROOM: <> from the precinct bathrooms.
- - INSIDE_OFFICE: <> from the detective offices.
- - INSIDE_FRONT: <> from the front.
- - INSIDE_BACKOFFICE: <> from the back office hallway.
- - INSIDE_CELLS: <> from the cells.
- - INSIDE_EVIDENCE_ROOM: <> from the evidence room.
- - else: <>.
+
+{player_position == secretary_position: 
+    {is_possessing_a_rat:
+        The secretary sees the rat. 
+        Secretary: "{~Oh shit, a rat!" |Ugh this rat is ugly, it kinda reminds me of my ex..." |Oh that's an ugly rat. Shoo shoo go away." |Shoo shoo go away rat!" |Ahh a rat! I need a break from this place." |I'm not even surprised seeing ugly rats like that anymore." |I need to get out of this town, the rats are almost bigger than the cats." }
+    -else:
+        {not is_possessing_the_secretary:
+            {RANDOM(1,50) == 49: //A 0.02% chance this could happen.
+                Secretary: "Oh I can feel your presence! Are you there ghost... Haha that lady in the street the other day was crazy saying stuff like that. There's no such thing as ghosts"
+            -else: //There's a 60% chance the secretary says something when you enter the room as a ghost.
+                {RANDOM(1,10) > 4:
+                    Secretary: "{~Oh it's getting cold in here." |Oh I feel creeped out... I should stop working this late" |Did something just move back there? Must be my eyes playing tricks on me, I'm working too much."}
+                }
+            }
+        }
+    }
 }
+
 ->DONE
 
-
 === credits ===
-    Programming: Michael Gerber
-    Story: Sean Mackey
-    Design: Dominika Kmiecik
     Have a look at this game's Github page: https://github.com/Michael2150/Loose-Ends
-    
-    
     -> END
