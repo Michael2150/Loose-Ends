@@ -479,7 +479,7 @@ Using his rat body, Bob squeezes behing the desk and pulls out the key onto the 
             Richard: "We found him next to that mill his father's been working on the past week. Rhys was the best climber I knew he would never have fallen off that mill."
             ~questions_left--
             -> 4k_interview_suspects(4k_interview_suspects)
-        ** Question about her whereabouts.
+        ** Question about his whereabouts.
             Bob: "Where were you the morning of the death of Rhys Miller?"
             Richard: "I was at my house waiting for Tara because we wanted to go over to Rhys later the day."
             ~questions_left--
