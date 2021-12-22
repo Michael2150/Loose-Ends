@@ -15,7 +15,7 @@ CONST INSIDE_EVIDENCE_ROOM = 10
 
 //======================================= VARIABLES ==============================================
 
-VAR debug = true //ENABLES DEBUGGING, THIS STARTS THE STORY WHERE I'M CURRENTLY WORKING ON IT INSTEAD OF THE BEGINNING.
+VAR debug = false //ENABLES DEBUGGING, THIS STARTS THE STORY WHERE I'M CURRENTLY WORKING ON IT INSTEAD OF THE BEGINNING.
 VAR is_possessing_a_rat = false //Stores whether you are possessing the rat.
 VAR is_possessing_the_secretary = false //Stores whether you are possessing the secretary.
 VAR has_learned_to_unpossess_rat = false //This indicates that the player has learned the ability to unpossess things.
@@ -27,7 +27,7 @@ VAR has_key = false //Stores wether you have the key for the evidence room.
 VAR player_prev_position = -1 //Indicates what the player's previous position was.
 VAR player_position = -1 //Indicates the player's current position in the map.
 VAR files_left_to_read = 2 //Shows that Bob can read a certain amount of files before he gets too tired.
-VAR questions_left = 3 //The amount of questions Bob has energy left for.
+VAR questions_left = 4 //The amount of questions Bob has energy left for.
 
 //Initialize some variables
 ~ where_does_rat_spawn = RANDOM(1,2) //Gets a random place to spawn the rat.
@@ -36,18 +36,9 @@ VAR questions_left = 3 //The amount of questions Bob has energy left for.
 
 {debug:
     [[[[[[[[[[[[[[[[[[[[ DEBUGGING ]]]]]]]]]]]]]]]]]]]]]]
-    ~has_learned_to_unpossess_rat = true
-    <- possess_secretary(true)
-    ~player_position = INSIDE_OFFICE
-    <- 4h_look_for_key(4h_look_for_key)
-    <- possess_secretary(false)
-    <- possess_rat(true)
-    <- 4i_pull_key_out
-    <- possess_rat(false)
-    <- possess_secretary(true)
-    ~has_key = true
-    ~player_position = INSIDE_FRONT
-    -> 4d_front
+    ~files_left_to_read = 0
+    ~questions_left = 1
+    -> 4k_interview_suspects(4k_interview_suspects)
 }
 
 //======================================= INTRODUCTION ==============================================
@@ -98,7 +89,7 @@ Bob’s spirit feels a pull back towards his body as he is getting revived.
 Bob: “I have to get to the precinct as soon as possible. Those suspects are getting released tonight.”
 Bob figures out how to move in his new ghostly state and makes his way to the precinct down the street.
 
-#IMAGE: game_resources/police_station.png
+#IMAGE: ../game_resources/police_station.png
 
 -> 3a_front_of_precinct
 
@@ -145,6 +136,8 @@ Bob’s at the right side of the precinct. There is nothing except a big wall wi
 + Go to the back of the precinct -> 3d_back_of_precint
 + Go to the front of the precinct -> 3a_front_of_precinct
 + {is_possessing_a_rat} Go through crack.
+    #CLEAR
+    #IMAGE: ../game_resources/map.png
     Bob, while possessing the rat's body, climbs through the crack.
     -> 4a_bathroom
 
@@ -177,8 +170,6 @@ Bob picks up the rat and feels his own life force enter into it. He feels sick a
 }
 + [Go to the detectives office.]
     -> 4b_office
-+ {is_possessing_a_rat} Go back through crack 
-    -> 3c_right_of_precinct
 + {is_possessing_a_rat && has_learned_to_unpossess_rat} [Unpossess the rat.]
     <- possess_rat(false)
     -> 4a_bathroom
@@ -306,7 +297,8 @@ Bob picks up the rat and feels his own life force enter into it. He feels sick a
     <- 4f_open_evidence_room
     -> 4d_front
 + {4f_open_evidence_room}[Go to evidence room and check out evidence.]
-    -> 4e_evidence_room
+    #CLEAR
+    -> 4j_go_through_evidence(4j_go_through_evidence)
 + {is_possessing_a_rat && has_learned_to_unpossess_rat} [Unpossess the rat.]
     <- possess_rat(false)
     -> 4d_front
@@ -319,29 +311,6 @@ Bob picks up the rat and feels his own life force enter into it. He feels sick a
 + {secretary_position == player_position && not is_possessing_a_rat && not is_possessing_the_secretary} [Possess secretary.] 
     <- possess_secretary(true)
     -> 4d_front
-
-=== 4e_evidence_room ===
-~ player_prev_position = player_position
-~ player_position = INSIDE_EVIDENCE_ROOM
-{player_prev_position != player_position:
-    <- bob_enters_room
-    This small dark room has a few file cabinets with the evidence on current cases.
-}
-{not 4j_go_through_evidence: -> 4j_go_through_evidence(4j_go_through_evidence)} 
-+ [Go to the precinct front.]
-    -> 4d_front
-+ {is_possessing_a_rat && has_learned_to_unpossess_rat} [Unpossess the rat.]
-    <- possess_rat(false)
-    -> 4e_evidence_room
-+ {rat_body_position == player_position && not is_possessing_a_rat && not is_possessing_the_secretary} [Possess rat.] 
-    <- possess_rat(true)
-    -> 4e_evidence_room
-+ {is_possessing_the_secretary && has_learned_to_unpossess_rat} [Unpossess the secretary.]
-    <- possess_secretary(false)
-    -> 4e_evidence_room
-+ {secretary_position == player_position && not is_possessing_a_rat && not is_possessing_the_secretary} [Possess secretary.] 
-    <- possess_secretary(true)
-    -> 4e_evidence_room
 
 === 4e_cells ===
 ~ player_prev_position = player_position
@@ -379,7 +348,6 @@ Bob tries to open the door but it seems locked.
 Bob: "{~There should be a key somewhere in the office." |Maybe there's a key in the office." |There could be something in the office I can use to get in here."}
 ->DONE
 
-
 === 4h_look_for_key(lookedAlready) ===
 {lookedAlready:
     {is_possessing_the_secretary:
@@ -405,89 +373,149 @@ Using his rat body, Bob squeezes behing the desk and pulls out the key onto the 
 
 === 4j_go_through_evidence(has_been_called) ===
 {not has_been_called: 
-    Bob feels another pull back to his body. He cannot keep doing this, the pull is getting stronger. There's 4 files to read, but because of this he can only read {files_left_to_read} of them. He needs to be careful about what he chooses to read. He still needs to ask some questions to the 2 that's locked up. He can only ask them questions about on what he's read.
+    Bob feels another pull back to his body. He cannot keep doing this, the pull is getting stronger. There's 4 files to read, but he can only read {files_left_to_read} of them. He needs to be careful about what he chooses to read. He still needs to ask some questions to the 2 suspects that's locked up. He can only ask them questions about on what he's read.
 }
-{files_left_to_read > 1:
-    Bob: "Hmm I can only pick {files_left_to_read} files
--else:
-    {files_left_to_read <= 0: //EXIT THIS "GO THROUGH EVIDENCE" LOOP
-        Bob: "I feel the pull getting stronger. I have enough energy to quickly interview the suspects before I get pulled back into my body."
+{files_left_to_read <= 0: //EXIT THIS "GO THROUGH EVIDENCE" LOOP
+    *Continue
+        #CLEAR
+        Bob: "I feel the pull getting stronger. I have enough energy to interview the suspects before I get pulled back into my body."
         -> 4k_interview_suspects(4k_interview_suspects)
+-else:
+    {files_left_to_read > 1:
+        Bob: "Hmm I can only pick {files_left_to_read} files
     -else:
         Bob: "Hmm I can only pick {files_left_to_read} more file
     }
+    <>, what is the most important."
+    * [Read about the crime scene]
+        ~files_left_to_read--
+        <-read_about_the_crime_scene
+        -> 4j_go_through_evidence(4j_go_through_evidence)
+    * [Read about Eric Miller, the victim's father]
+        ~files_left_to_read--
+        <-read_about_the_father
+        -> 4j_go_through_evidence(4j_go_through_evidence)
+    * [Read about Richard Smith, the male suspect]
+        ~files_left_to_read--
+        <-read_about_richard
+        -> 4j_go_through_evidence(4j_go_through_evidence)
+    * [Read about Tara Van Dyke, the female suspect]
+        ~files_left_to_read--
+        <-read_about_tara
+        -> 4j_go_through_evidence(4j_go_through_evidence)
 }
-<>, what is the most important"
-* [Read about the crime scene]
-    ~files_left_to_read--
-    <-read_about_the_crime_scene
-    -> 4j_go_through_evidence(4j_go_through_evidence)
-* [Read about Eric Miller, the victim's father]
-    ~files_left_to_read--
-    <-read_about_the_father
-    -> 4j_go_through_evidence(4j_go_through_evidence)
-* [Read about Richard Smith, the male suspect]
-    ~files_left_to_read--
-    <-read_about_richard
-    -> 4j_go_through_evidence(4j_go_through_evidence)
-* [Read about Tara Van Dyke, the female suspect]
-    ~files_left_to_read--
-    <-read_about_tara
-    -> 4j_go_through_evidence(4j_go_through_evidence)
     
 === 4k_interview_suspects(has_been_called) ===
 {not has_been_called: Bob walks the possessed secretary to the cells to question the 2 suspects.}
-+ Question Tara Van Dyke
-    **{read_about_tara} Question about herself.
-        Bob: "Tara, why don't you want to talk to us? We're here to help and figure out what happened to your frined Rhys."
-        Tara: "I know, but we did not do anything wrong. How do you expect us to feel finding our friend out in the field. Dead."
-        -> 4k_interview_suspects(4k_interview_suspects)
-    **{read_about_richard} Question about {read_about_tara:her and }Richard being wealthy.
-        {read_about_tara:
-            Bob: "So Tara, how come you and Richard coming from wealthy families, were best friends with the poor Miller boy?"
-            Tara: "Not Everything is about money, we know the Miller's needed money to keep running the farm, but that wasn't the reason for our friendship. Rhys was a good person that's all that matters."
-        -else:
-            Bob: "So Tara, what do you think Richard has to do with this all of this. He does look like a prime suspect, his family wants to buy the Miller's farm? What better way to make them sell than to push old man Miller to the brink and killing his son?"
-            Tara: "What! That's crazy. Richard has a big reputation to uphold for his family, he wouldn't do anything like this. And seems to me old man Miller could use the money he's going to loose the farm."
-        }
-        -> 4k_interview_suspects(4k_interview_suspects)
-    **{read_about_the_father} Question about Rhys's father.
-        Bob: "Tara how was Rhys's father treating you up on the farm.{read_about_tara: Being a foreign family from the Netherlands and him being a proud American farmer how did he handle that.}"
-        Tara: "He treated us well, but the situation with money got to him. Sometimes he took it out on poor Rhyssie."
-        -> 4k_interview_suspects(4k_interview_suspects)
-    **{read_about_the_crime_scene} Question about scene.
-        Bob: "I know this might be hard, but could you describe the scene to me when you and Richard supposedly found Rhys."
-        Tara: "He was laying next to the mill, I've seen him climb those mills ever since we were young. He would never fall off someone had to have done something to make him fall. His dad was working on that mill the day before."
-        -> 4k_interview_suspects(4k_interview_suspects)
-    ** Question about her whereabouts.
-        Bob: "Where were you the 2 or so hours before going to the Miller's farm?"
-        Tara: "Me and Richard were getting ready to go to visit Rhys for the weekend. There's no one to varify, but it's the truth."
-        -> 4k_interview_suspects(4k_interview_suspects)
-    ++ Rather question someone else
-        -> 4k_interview_suspects(4k_interview_suspects)
-+ Question Richard Smith
-    **{read_about_tara} Question about Tara.
-        Bob: ""
-        Richard: ""
-        -> 4k_interview_suspects(4k_interview_suspects)
-    **{read_about_richard} Question about himself
-        Bob: ""
-        Richard: ""
-        -> 4k_interview_suspects(4k_interview_suspects)
-    **{read_about_the_father} Question about Rhys's father.
-        Bob: ""
-        Richard: ""
-        -> 4k_interview_suspects(4k_interview_suspects)
-    **{read_about_the_crime_scene} Question about scene.
-        Bob: ""
-        Richard: ""
-        -> 4k_interview_suspects(4k_interview_suspects)
-    ** Question about her whereabouts.
-        Bob: ""
-        Richard: ""
-        -> 4k_interview_suspects(4k_interview_suspects)
-    ++ Rather question someone else
-        -> 4k_interview_suspects(4k_interview_suspects)
+{questions_left <= 0: //EXIT THIS "INTERVIEW" LOOP
+    *Continue
+        #CLEAR
+        Bob: "I can't keep this up anymore!"
+        Bob gets sucked out of the secretary's body. He gets pulled out of the precinct down the street past where his car lays wrecked in the rain. Buildings and streetlights flash past him. He reaches a hospital where the ambulance took his body. He sees his body getting revived and there's a bright light. His spirit entered his body once again. 
+        -> 5_hospital
+-else:
+    {questions_left > 1:
+        Bob can ask {questions_left} {has_been_called:more} questions.
+    -else:
+        Bob can ask {questions_left} more question.
+    }
+    
+    + Question Tara Van Dyke
+        **{read_about_tara} Question about herself.
+            Bob: "Tara, why don't you want to talk to us? We're here to help and figure out what happened to your frined Rhys."
+            Tara: "I know, but we did not do anything wrong. How do you expect us to feel finding our friend out in the field. Dead."
+            ~questions_left--
+            -> 4k_interview_suspects(4k_interview_suspects)
+        **{read_about_richard} Question about {read_about_tara:her and }Richard being wealthy.
+            {read_about_tara:
+                Bob: "So Tara, how come you and Richard coming from wealthy families, were best friends with the poor Miller boy?"
+                Tara: "Not Everything is about money, we know the Miller's needed money to keep running the farm, but that wasn't the reason for our friendship. Rhys was a good person that's all that matters."
+            -else:
+                Bob: "So Tara, what do you think Richard has to do with this all of this. He does look like a prime suspect, his family wants to buy the Miller's farm? What better way to make them sell than to push old man Miller to the brink and killing his son?"
+                Tara: "What! That's crazy. Richard has a big reputation to uphold for his family, he wouldn't do anything like this. And seems to me old man Miller could use the money he's going to loose the farm."
+            }
+            ~questions_left--
+            -> 4k_interview_suspects(4k_interview_suspects)
+        **{read_about_the_father} Question about Rhys's father.
+            Bob: "Tara how was Rhys's father treating you up on the farm.{read_about_tara: Being a foreign family from the Netherlands and him being a proud American farmer how did he handle that.}"
+            Tara: "He treated us well, but the situation with money got to him. Sometimes he took it out on poor Rhyssie."
+            ~questions_left--
+            -> 4k_interview_suspects(4k_interview_suspects)
+        **{read_about_the_crime_scene} Question about scene.
+            Bob: "I know this might be hard, but could you describe the scene to me when you and Richard supposedly found Rhys."
+            Tara: "He was laying next to the mill, I've seen him climb those mills ever since we were young. He would never fall off someone had to have done something to make him fall. His dad was working on that mill the day before."
+            ~questions_left--
+            -> 4k_interview_suspects(4k_interview_suspects)
+        ** Question about her whereabouts.
+            Bob: "Where were you the 2 or so hours before going to the Miller's farm?"
+            Tara: "Me and Richard were getting ready to go to visit Rhys for the weekend. There's no one to varify, but it's the truth."
+            ~questions_left--
+            -> 4k_interview_suspects(4k_interview_suspects)
+        ++ Rather question someone else
+            -> 4k_interview_suspects(4k_interview_suspects)
+    + Question Richard Smith
+        **Question about Tara.
+            Bob: "You and Tara seem to have a real close friendship{read_about_tara:, so does Rhys and Tara}. 
+            {read_about_tara:
+                <> I can't help to wonder there was some sort of love triangle between the three of you. 
+            -else:
+                <> If you are trying to protect her from something she did, you need to tell me. The best way to help her is to tell me everything you know.
+            }<>"
+            Richard: "She did not do anything, neither did I. She and Rhys where just friends and she would never hurt a fly."
+            ~questions_left--
+            -> 4k_interview_suspects(4k_interview_suspects)
+        **{read_about_richard} Question about himself
+            Bob: "How about you, I hear you're a pretty wealthy young man. How did you and a farmer's boy become such good friends?"
+            Richard: "Me and Rhys met at school and it was never about money for us. It affected his dad though I thought my family could help them out by buying the farm for a good amount of money but Rhys's dad did not like that at all."
+            ~questions_left--
+            -> 4k_interview_suspects(4k_interview_suspects)
+        **{read_about_the_father} Question about Rhys's father.
+            Bob: "What can you tell me about Rhys's father?"
+            Richard: "He's an old man with some problems. Money is getting to him, he's about to lose the farm and sometimes he would take it out on Rhys and beat him."
+            ~questions_left--
+            -> 4k_interview_suspects(4k_interview_suspects)
+        **{read_about_the_crime_scene} Question about scene.
+            Bob: "You and Tara found Rhys's body, what can you tell me about when you found him."
+            Richard: "We found him next to that mill his father's been working on the past week. Rhys was the best climber I knew he would never have fallen off that mill."
+            ~questions_left--
+            -> 4k_interview_suspects(4k_interview_suspects)
+        ** Question about her whereabouts.
+            Bob: "Where were you the morning of the death of Rhys Miller?"
+            Richard: "I was at my house waiting for Tara because we wanted to go over to Rhys later the day."
+            ~questions_left--
+            -> 4k_interview_suspects(4k_interview_suspects)
+        ++ Rather question someone else
+            -> 4k_interview_suspects(4k_interview_suspects)
+
+}
+
+=== 5_hospital ===
+Bob wakes up the morning in the hospital. The Police Chief Johnson is sitting next to his hospital bed, half asleep. He snaps awake and tends to Bob.
+Chief Johnson: "Oh look at you, you're awake. For a while there they thought you weren't going to make it. Gave us all a big scare. The other driver a fella called Peter got away almost unharmed."
+Bob: "I was on my way to look at the case... I'm sorry chief."
+Chief Johnson: "No worries Bob, I'll have Greg have a look at it. You need to rest. We closed the precinct for the day anyway apparently the new secretary experienced some spooky stuff last night and refuses to come in to the office."
+Bob: "I.. I don't know what happened, but I think I know who did it... It was..."
+
+VAR chosenMurderer = -1
++ [Eric Miller]
+    ~chosenMurderer = 0
+    <> The boy's own father, Eric Miller, he's been having trouble with money for a few years now and he has a history with abusing the little boy. It was him.
++ [Tara Van Dyke]
+    ~chosenMurderer = 1
+    <> The boy's friend, Tara Van Dyke, she used him to get close to Richard. And when he started to notice her intent was only to get together with Richard for his money she killed him. It was her.
++ [Richard Smith]
+    ~chosenMurderer = 2
+    <> The boys best friend, Richard Smith, his family has been wanting to buy that farm the past 2 years. He always wants to prove himself to his family and what better way than to kill the old man Eric's son to make him go insane and sell the farm to the Smith's.
+
+- ->6_court
+
+=== 6_court ===
+{chosenMurderer:
+- 1: The court is seated, and the evidence that you provided is read to the court. Tara sits there in cuffs, tears streaming down her face as the evidence you provided to the court is shown to the jury. All the while Richard and Eric watch on. Bob sighs and looks to Eric who sits there with a smug look on his face. A member of the jury stands saying, “We the jury find Tara Van Dyke, guilty on all charges.” Richard and Tara both break down whilst Eric laughs to himself. He’s the first to leave the court and enjoy his life as a free man.
+- 2: The court is seated, and the evidence that you provided is read to the court. Richard sits and watches the court with a sunken face. He looks to Bob, his eyes defeated and broken. Bob looks away in shame, he looks to Tara who is pressed into her mother’s side, crying all the while. Bob sighs and looks to Eric who sits there with a smug look on his face. Maybe it was the justice for his kid, but Bob couldn’t shake the feeling of malice of that smile. A member of the jury stands saying, “We the jury find Richard Smith, guilty on all charges.” Tara breaks down even more so than before, but Richard just sits and accepts his faith. Eric laughs to himself. He’s the first to leave the court and enjoy his life as a free man.
+- 0:The court is seated, and the evidence that you provided is read to the court. Eric is dragged out, fighting, and shouting at the jury all sorts of obscenities. Bob looks around the room to the other two suspects who were seated together. Richard has his arm wrapped around Tara whispering quietly. A member of the jury stands “We the jury find Eric Miller, guilty for the murder of his son Rhys Miller.” Both friends sigh softly and smile. They embrace each other as Eric is taken away. Both friends stand and leave the court, ready to enjoy their free lives together. 
+}
+-> credits
 
 //======================================= METHODS ==============================================
 
@@ -595,5 +623,6 @@ Notes: She's very nervous and doesn't like to talk in front of people. She only 
 ->DONE
 
 === credits ===
-    Have a look at this game's Github page: https://github.com/Michael2150/Loose-Ends
+    Thank you for playing our game :)
+    Be sure to check out our github repo on this game at - www.github.com/Michael2150/Loose-Ends
     -> END
